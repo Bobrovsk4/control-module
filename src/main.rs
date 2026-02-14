@@ -1,5 +1,5 @@
 use iced::widget::{button, column, container, pick_list, row, scrollable, space, text};
-use iced::{Alignment, Color, Element, Length, Theme, Length::Fill};
+use iced::{Alignment, Color, Element, Length, Theme, Length::Fill, Border, color};
 use std::fs;
 
 #[derive(Default)]
@@ -175,25 +175,38 @@ impl State {
         row![
             column![
                 space().height(10),
-                "Алгоритм",
-                pick_list,
+                row![
+                    text("Алгоритм").width(80).align_y(Alignment::Center),
+                    space().width(20),
+                    pick_list.width(300),
+                ],
                 space().height(10),
                 row![
-                    text("Таблица"),
+                    text("Таблица").width(80).align_y(Alignment::Center),
                     space().width(20),
                     button(
                         text("Выбрать файл")
-                        .width(140)
                         .align_x(Alignment::Center),
-                    ).on_press(Message::LoadTable)
+                    ).width(300).on_press(Message::LoadTable)
                 ],
                 space().height(10),
                 error_message,
                 self.generate_table()
-            ],
-            
+            ].align_x(Alignment::Center),
+            column![
+                space().height(10),
+                container(text("")).width(500).height(500).style(|_theme: &Theme| container::Style {
+                    background: Some(color!(40,40,40).into()),
+                    border: Border {
+                        radius: 4.0.into(),
+                        color: color!(110,110,110).into(),
+                        width: 1.0
+                    },
+                    ..Default::default()
+                })
+            ].align_x(Alignment::Center),
         ]
-        .width(500).height(1000)
+        .width(1000).height(600)
         .spacing(10)
         .into()
     }
