@@ -4,7 +4,7 @@ use iced::widget::{button, column, container, pick_list, row, scrollable, space,
 use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
 use std::fs;
 
-use crate::algorithms::{johnsons, petrov_sokolicyn};
+use crate::algorithms::{branch_and_bound, johnsons, petrov_sokolicyn};
 
 #[derive(Default)]
 struct State {
@@ -176,7 +176,20 @@ impl State {
                     self.error = None;
                 }
                 Some(Algorithm::BrandAndBound) => {
-                    println!("TODO")
+                    match branch_and_bound::algorithm(&self.table_data, 5000, 1_000_000) {
+                        Ok((result, stats)) => {
+                            self.result_str = Some(branch_and_bound::format_result(
+                                &result,
+                                &stats,
+                                &self.table_data,
+                            ));
+                            self.error = None;
+                        }
+                        Err(e) => {
+                            self.error = Some(format!("Ошибка метода ветвей и границ:\n{}", e));
+                            self.result_str = None;
+                        }
+                    }
                 }
                 None => {
                     self.error = Some("Алгоритм не выбран".to_string());
@@ -200,7 +213,7 @@ impl State {
             None
         };
 
-        row![
+        container(row![
             column![
                 space().height(10),
                 row![
@@ -227,10 +240,15 @@ impl State {
             .align_x(Alignment::Center),
             column![
                 space().height(10),
-                container(scrollable(res_str).direction(scrollable::Direction::Both {
-                    horizontal: scrollable::Scrollbar::new(),
-                    vertical: scrollable::Scrollbar::new(),
-                }))
+                container(
+                    scrollable(res_str)
+                        .direction(scrollable::Direction::Both {
+                            horizontal: scrollable::Scrollbar::new(),
+                            vertical: scrollable::Scrollbar::new(),
+                        })
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                )
                 .padding(10)
                 .width(Length::Fill)
                 .height(Length::Fill)
@@ -242,14 +260,14 @@ impl State {
                         width: 1.0
                     },
                     ..Default::default()
-                }),
-                space().height(10),
+                })
             ]
+            .width(Length::Fill)
             .align_x(Alignment::Center),
-        ]
-        .width(1000)
-        .height(600)
-        .spacing(10)
+        ])
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .padding(10)
         .into()
     }
 }
