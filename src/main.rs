@@ -1,32 +1,38 @@
+mod algorithms;
+
 use iced::widget::{button, column, container, pick_list, row, scrollable, space, text};
 use iced::{Alignment, Color, Element, Length, Theme, Length::Fill, Border, color};
 use std::fs;
+
+use algorithms::{johnson_algorithm, format_result};
 
 #[derive(Default)]
 struct State {
    selected_alg: Option<Algorithm>,
    table_data: Vec<Vec<i32>>,
    error: Option<String>,
+   result_str: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     AlgSelected(Algorithm),
     LoadTable,
+    RunTask
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum Algorithm {
     #[default]
-    Jonson,
+    Johnson,
     Petrov_Sokolicyn,
     BrandAndBound, // ветвей и границ
 }
 
 impl Algorithm {
     const ALL: [Algorithm; 3] = [
-        Algorithm::Jonson,
+        Algorithm::Johnson,
         Algorithm::Petrov_Sokolicyn,
         Algorithm::BrandAndBound
     ];
@@ -38,7 +44,7 @@ impl std::fmt::Display for Algorithm {
             f,
             "{}",
             match self {
-                Algorithm::Jonson => "Алгоритм Джонсона",
+                Algorithm::Johnson => "Алгоритм Джонсона",
                 Algorithm::Petrov_Sokolicyn => "Метод Петрова-Соколицына",
                 Algorithm::BrandAndBound => "Метод ветвей и границ"
             }
@@ -60,7 +66,6 @@ impl State {
         {
             let cells: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
             
-            // Пропускаем пустые строки после фильтрации пробелов
             if cells.iter().all(|s| s.is_empty()) {
                 continue;
             }
@@ -139,7 +144,6 @@ impl State {
                 self.selected_alg = Some(alg);
             },
             Message::LoadTable => {
-                // Синхронная загрузка (блокирует UI на время операции)
                 match self.parse_csv(
                     rfd::FileDialog::new()
                     .add_filter("CSV only", &["csv"])
@@ -157,6 +161,28 @@ impl State {
                         self.error = Some(format!("Ошибка парсинга: {}", e));
                     }
                 }
+            },
+            Message::RunTask => {
+                match self.selected_alg {
+                    Some(Algorithm::Johnson) => {
+                        self.result_str = Some(
+                            format_result(
+                                &johnson_algorithm(&self.table_data).expect("Ошибка выполнения алгоритма"),
+                                &self.table_data
+                            )
+                        );
+                        self.error = None;
+                    },
+                    Some(Algorithm::Petrov_Sokolicyn) => {
+                        println!("TODO")
+                    },
+                    Some(Algorithm::BrandAndBound) => {
+                        println!("TODO")
+                    },
+                    None => {
+                        self.error = Some("Алгоритм не выбран".to_string());
+                    }
+                }
             }
         }
     }
@@ -165,9 +191,13 @@ impl State {
         let pick_list = pick_list(&Algorithm::ALL[..], self.selected_alg, Message::AlgSelected);
 
         let error_message = if let Some(err) = &self.error {
-            Some(
-                text(format!("{}", err))
-            )
+            Some(text(format!("{}", err)))
+        } else {
+            None
+        };
+
+        let res_str = if let Some(res) = &self.result_str {
+            Some(text(res).width(Length::Fill))
         } else {
             None
         };
@@ -191,11 +221,19 @@ impl State {
                 ],
                 space().height(10),
                 error_message,
-                self.generate_table()
+                self.generate_table(),
+                space().height(10),
+                button(
+                    text("Выполнить")
+                    .align_x(Alignment::Center)
+                ).width(380).on_press(Message::RunTask)
             ].align_x(Alignment::Center),
             column![
                 space().height(10),
-                container(text("")).width(500).height(500).style(|_theme: &Theme| container::Style {
+                container(res_str).padding(10)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .style(|_theme: &Theme| container::Style {
                     background: Some(color!(40,40,40).into()),
                     border: Border {
                         radius: 4.0.into(),
@@ -203,7 +241,8 @@ impl State {
                         width: 1.0
                     },
                     ..Default::default()
-                })
+                }),
+                space().height(10),
             ].align_x(Alignment::Center),
         ]
         .width(1000).height(600)
