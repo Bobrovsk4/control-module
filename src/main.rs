@@ -1,24 +1,24 @@
 mod algorithms;
 
 use iced::widget::{button, column, container, pick_list, row, scrollable, space, text};
-use iced::{Alignment, Color, Element, Length, Theme, Length::Fill, Border, color};
+use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
 use std::fs;
 
-use algorithms::{johnson_algorithm, format_result};
+use crate::algorithms::{johnsons, petrov_sokolicyn};
 
 #[derive(Default)]
 struct State {
-   selected_alg: Option<Algorithm>,
-   table_data: Vec<Vec<i32>>,
-   error: Option<String>,
-   result_str: Option<String>,
+    selected_alg: Option<Algorithm>,
+    table_data: Vec<Vec<i32>>,
+    error: Option<String>,
+    result_str: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     AlgSelected(Algorithm),
     LoadTable,
-    RunTask
+    RunTask,
 }
 
 #[allow(non_camel_case_types)]
@@ -34,7 +34,7 @@ impl Algorithm {
     const ALL: [Algorithm; 3] = [
         Algorithm::Johnson,
         Algorithm::Petrov_Sokolicyn,
-        Algorithm::BrandAndBound
+        Algorithm::BrandAndBound,
     ];
 }
 
@@ -46,30 +46,29 @@ impl std::fmt::Display for Algorithm {
             match self {
                 Algorithm::Johnson => "Алгоритм Джонсона",
                 Algorithm::Petrov_Sokolicyn => "Метод Петрова-Соколицына",
-                Algorithm::BrandAndBound => "Метод ветвей и границ"
+                Algorithm::BrandAndBound => "Метод ветвей и границ",
             }
         )
     }
 }
-
 
 impl State {
     fn parse_csv(&mut self, path: &str) -> Result<Vec<Vec<i32>>, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(path).expect("Ошибка чтения файла");
 
         let mut table = Vec::new();
-        
+
         for (line_num, line) in content
             .lines()
             .enumerate()
             .filter(|(_, line)| !line.trim().is_empty() && !line.trim().starts_with('#'))
         {
             let cells: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
-            
+
             if cells.iter().all(|s| s.is_empty()) {
                 continue;
             }
-            
+
             let row: Result<Vec<i32>, _> = cells
                 .iter()
                 .map(|cell| {
@@ -82,14 +81,14 @@ impl State {
                     })
                 })
                 .collect();
-            
+
             table.push(row?);
         }
-        
+
         if table.is_empty() {
             return Err("Данные в файле не найдены".into());
         }
-        
+
         Ok(table)
     }
 
@@ -121,10 +120,7 @@ impl State {
                     })
                     .collect();
 
-                row(cells)
-                    .spacing(4)
-                    .align_y(Alignment::Center)
-                    .into()
+                row(cells).spacing(4).align_y(Alignment::Center).into()
             })
             .collect();
 
@@ -142,15 +138,15 @@ impl State {
         match message {
             Message::AlgSelected(alg) => {
                 self.selected_alg = Some(alg);
-            },
+            }
             Message::LoadTable => {
                 match self.parse_csv(
                     rfd::FileDialog::new()
-                    .add_filter("CSV only", &["csv"])
-                    .pick_file()
-                    .expect("Ошибка выбора файла")
-                    .to_str()
-                    .expect("Ошибка преобразования названия файла в строку")
+                        .add_filter("CSV only", &["csv"])
+                        .pick_file()
+                        .expect("Ошибка выбора файла")
+                        .to_str()
+                        .expect("Ошибка преобразования названия файла в строку"),
                 ) {
                     Ok(data) => {
                         self.table_data = data;
@@ -161,29 +157,31 @@ impl State {
                         self.error = Some(format!("Ошибка парсинга: {}", e));
                     }
                 }
-            },
-            Message::RunTask => {
-                match self.selected_alg {
-                    Some(Algorithm::Johnson) => {
-                        self.result_str = Some(
-                            format_result(
-                                &johnson_algorithm(&self.table_data).expect("Ошибка выполнения алгоритма"),
-                                &self.table_data
-                            )
-                        );
-                        self.error = None;
-                    },
-                    Some(Algorithm::Petrov_Sokolicyn) => {
-                        println!("TODO")
-                    },
-                    Some(Algorithm::BrandAndBound) => {
-                        println!("TODO")
-                    },
-                    None => {
-                        self.error = Some("Алгоритм не выбран".to_string());
-                    }
-                }
             }
+            Message::RunTask => match self.selected_alg {
+                Some(Algorithm::Johnson) => {
+                    self.result_str = Some(johnsons::format_result(
+                        &johnsons::algorithm(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::Petrov_Sokolicyn) => {
+                    self.result_str = Some(petrov_sokolicyn::format_result(
+                        &petrov_sokolicyn::algorithm(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::BrandAndBound) => {
+                    println!("TODO")
+                }
+                None => {
+                    self.error = Some("Алгоритм не выбран".to_string());
+                }
+            },
         }
     }
 
@@ -214,38 +212,43 @@ impl State {
                 row![
                     text("Таблица").width(80).align_y(Alignment::Center),
                     space().width(20),
-                    button(
-                        text("Выбрать файл")
-                        .align_x(Alignment::Center),
-                    ).width(300).on_press(Message::LoadTable)
+                    button(text("Выбрать файл").align_x(Alignment::Center),)
+                        .width(300)
+                        .on_press(Message::LoadTable)
                 ],
                 space().height(10),
                 error_message,
                 self.generate_table(),
                 space().height(10),
-                button(
-                    text("Выполнить")
-                    .align_x(Alignment::Center)
-                ).width(380).on_press(Message::RunTask)
-            ].align_x(Alignment::Center),
+                button(text("Выполнить").align_x(Alignment::Center))
+                    .width(380)
+                    .on_press(Message::RunTask)
+            ]
+            .align_x(Alignment::Center),
             column![
                 space().height(10),
-                container(res_str).padding(10)
+                container(scrollable(res_str).direction(scrollable::Direction::Both {
+                    horizontal: scrollable::Scrollbar::new(),
+                    vertical: scrollable::Scrollbar::new(),
+                }))
+                .padding(10)
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .style(|_theme: &Theme| container::Style {
-                    background: Some(color!(40,40,40).into()),
+                    background: Some(color!(40, 40, 40).into()),
                     border: Border {
                         radius: 4.0.into(),
-                        color: color!(110,110,110).into(),
+                        color: color!(110, 110, 110).into(),
                         width: 1.0
                     },
                     ..Default::default()
                 }),
                 space().height(10),
-            ].align_x(Alignment::Center),
+            ]
+            .align_x(Alignment::Center),
         ]
-        .width(1000).height(600)
+        .width(1000)
+        .height(600)
         .spacing(10)
         .into()
     }

@@ -1,12 +1,12 @@
 #[derive(Debug, Clone)]
-pub struct JohnsonResult {
+pub struct AlgResult {
     pub sequence: Vec<usize>,
     pub schedule: Vec<Vec<(i32, i32)>>,
     pub makespan: i32,
     pub idle_times: Vec<i32>,
 }
 
-pub fn johnson_algorithm(matrix: &Vec<Vec<i32>>) -> Result<JohnsonResult, String> {
+pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
     if matrix.is_empty() {
         return Err("Матрица пуста".to_string());
     }
@@ -21,7 +21,9 @@ pub fn johnson_algorithm(matrix: &Vec<Vec<i32>>) -> Result<JohnsonResult, String
         if row.len() != num_machines {
             return Err(format!(
                 "Неравномерная матрица: строка {} имеет {} элементов, ожидалось {}",
-                i, row.len(), num_machines
+                i,
+                row.len(),
+                num_machines
             ));
         }
         for (j, &time) in row.iter().enumerate() {
@@ -44,7 +46,7 @@ pub fn johnson_algorithm(matrix: &Vec<Vec<i32>>) -> Result<JohnsonResult, String
 
     let (schedule, makespan, idle_times) = build_schedule(matrix, &sequence)?;
 
-    Ok(JohnsonResult {
+    Ok(AlgResult {
         sequence,
         schedule,
         makespan,
@@ -52,7 +54,7 @@ pub fn johnson_algorithm(matrix: &Vec<Vec<i32>>) -> Result<JohnsonResult, String
     })
 }
 
-pub fn format_result(result: &JohnsonResult, matrix: &Vec<Vec<i32>>) -> String {
+pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     let mut output = String::new();
 
     if matrix[0].len() == 2 {
@@ -89,7 +91,10 @@ pub fn format_result(result: &JohnsonResult, matrix: &Vec<Vec<i32>>) -> String {
         output.push_str("\n");
     }
 
-    output.push_str(&format!("\nДлительность производственного цикла: {}\n", result.makespan));
+    output.push_str(&format!(
+        "\nДлительность производственного цикла: {}\n",
+        result.makespan
+    ));
     output.push_str("Простои станков:\n");
     for (machine, &idle) in result.idle_times.iter().enumerate() {
         output.push_str(&format!("M{}: {}\n", machine + 1, idle));
@@ -97,7 +102,6 @@ pub fn format_result(result: &JohnsonResult, matrix: &Vec<Vec<i32>>) -> String {
 
     output
 }
-
 
 fn johnson_two_machines(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
     let mut jobs: Vec<(usize, i32, i32)> = matrix
@@ -186,7 +190,7 @@ fn johnson_heuristic_multi_machine(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
     sequence
 }
 
-fn build_schedule(
+pub fn build_schedule(
     matrix: &Vec<Vec<i32>>,
     sequence: &Vec<usize>,
 ) -> Result<(Vec<Vec<(i32, i32)>>, i32, Vec<i32>), String> {

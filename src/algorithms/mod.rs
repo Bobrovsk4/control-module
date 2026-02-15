@@ -1,3 +1,2 @@
-pub use johnsons::{johnson_algorithm, format_result};
-
-mod johnsons;
+pub mod johnsons;
+pub mod petrov_sokolicyn;
