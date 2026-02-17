@@ -1,12 +1,4 @@
-use crate::algorithms::common::build_schedule;
-
-#[derive(Debug, Clone)]
-pub struct AlgResult {
-    pub sequence: Vec<usize>,
-    pub schedule: Vec<Vec<(i32, i32)>>,
-    pub makespan: i32,
-    pub idle_times: Vec<i32>,
-}
+use crate::algorithms::common::{AlgResult, create_result};
 
 pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     let mut output = String::new();
@@ -57,7 +49,7 @@ pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     output
 }
 
-fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
+pub fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
     let mut jobs: Vec<(usize, i32, i32)> = matrix
         .iter()
         .enumerate()
@@ -83,7 +75,7 @@ fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
         }
     }
 
-    sequence
+    create_result(matrix, sequence, "Джонсон (классический)")
 }
 
 fn find_min_job(jobs: &[(usize, i32, i32)]) -> (usize, usize) {
@@ -105,41 +97,4 @@ fn find_min_job(jobs: &[(usize, i32, i32)]) -> (usize, usize) {
     }
 
     (min_idx, min_machine)
-}
-
-fn johnson_heuristic_multi_machine(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
-    let num_machines = matrix[0].len();
-    let k = (num_machines + 1) / 2;
-
-    let pseudo_jobs: Vec<(usize, i32, i32)> = matrix
-        .iter()
-        .enumerate()
-        .map(|(idx, times)| {
-            let a: i32 = times[0..k].iter().sum();
-            let b: i32 = times[(num_machines - k)..num_machines].iter().sum();
-            (idx, a, b)
-        })
-        .collect();
-
-    let mut jobs = pseudo_jobs;
-    let mut sequence = vec![0usize; jobs.len()];
-    let mut left = 0;
-    let mut right = jobs.len() - 1;
-
-    while !jobs.is_empty() {
-        let (min_idx, min_machine) = find_min_job(&jobs);
-        let (job_idx, _, _) = jobs.remove(min_idx);
-
-        if min_machine == 0 {
-            sequence[left] = job_idx;
-            left += 1;
-        } else {
-            sequence[right] = job_idx;
-            if right > 0 {
-                right -= 1;
-            }
-        }
-    }
-
-    sequence
 }

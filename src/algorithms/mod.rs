@@ -1,4 +1,5 @@
 pub mod branch_and_bound;
+pub mod brute_force;
 pub mod common;
 pub mod johnson_classic;
 pub mod johnson_gen1;
@@ -6,3 +7,4 @@ pub mod johnson_gen2;
 pub mod johnson_gen3;
 pub mod johnson_gen4;
 pub mod petrov_sokolicyn;
+pub mod priority_rule;

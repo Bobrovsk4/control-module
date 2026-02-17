@@ -1,4 +1,6 @@
-fn johnson_gen3(matrix: &Vec<Vec<i32>>) -> Result<Vec<usize>, String> {
+use crate::algorithms::common::{AlgResult, create_result};
+
+pub fn johnson_gen3(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
     let mut jobs: Vec<(usize, usize)> = matrix
         .iter()
         .enumerate()
@@ -8,5 +10,7 @@ fn johnson_gen3(matrix: &Vec<Vec<i32>>) -> Result<Vec<usize>, String> {
         })
         .collect();
     jobs.sort_by_key(|k| std::cmp::Reverse(k.1));
-    Ok(jobs.into_iter().map(|(i, _)| i).collect())
+    let sequence = jobs.into_iter().map(|(i, _)| i).collect();
+
+    create_result(matrix, sequence, "Джонсон (приоритет «узкого места»)")
 }

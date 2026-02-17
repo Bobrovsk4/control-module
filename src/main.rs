@@ -4,7 +4,10 @@ use iced::widget::{button, column, container, pick_list, row, scrollable, space,
 use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
 use std::fs;
 
-use crate::algorithms::{branch_and_bound, johnson_classic, petrov_sokolicyn};
+use crate::algorithms::{
+    branch_and_bound, brute_force, johnson_classic, johnson_gen1, johnson_gen2, johnson_gen3,
+    johnson_gen4, petrov_sokolicyn, priority_rule,
+};
 
 #[derive(Default)]
 struct State {
@@ -56,9 +59,15 @@ impl std::fmt::Display for Algorithm {
             f,
             "{}",
             match self {
-                Algorithm::Johnson => "Алгоритм Джонсона",
-                Algorithm::Petrov_Sokolicyn => "Метод Петрова-Соколицына",
-                Algorithm::BrandAndBound => "Метод ветвей и границ",
+                Algorithm::JohnsonClassic => "Алгоритм Джонсона (классический)",
+                Algorithm::JohnsonGen1 => "Алгоритм Джонсона (мин. время на 1-м станке)",
+                Algorithm::JohnsonGen2 => "Алгоритм Джонсона (макс. время на последнем станке)",
+                Algorithm::JohnsonGen3 => "Алгоритм Джонсона (приоритет «узкого места»)",
+                Algorithm::JohnsonGen4 => "Алгоритм Джонсона (макс. суммарное время)",
+                Algorithm::PriorityRule => "Метод приоритетов",
+                Algorithm::BruteForce => "Метод полного перебора",
+                Algorithm::PetrovSokolitsyn => "Метод Петрова-Соколицына",
+                Algorithm::BranchAndBound => "Метод ветвей и границ",
             }
         )
     }
@@ -171,15 +180,63 @@ impl State {
                 }
             }
             Message::RunTask => match self.selected_alg {
-                Some(Algorithm::Johnson) => {
+                Some(Algorithm::JohnsonClassic) => {
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_classic::algorithm(&self.table_data)
+                        &johnson_classic::johnson_classic(&self.table_data)
                             .expect("Ошибка выполнения алгоритма"),
                         &self.table_data,
                     ));
                     self.error = None;
                 }
-                Some(Algorithm::Petrov_Sokolicyn) => {
+                Some(Algorithm::JohnsonGen1) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &johnson_gen1::johnson_gen1(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::JohnsonGen2) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &johnson_gen2::johnson_gen2(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::JohnsonGen3) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &johnson_gen3::johnson_gen3(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::JohnsonGen4) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &johnson_gen4::johnson_gen4(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::PriorityRule) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &priority_rule::priority_rule(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::BruteForce) => {
+                    self.result_str = Some(johnson_classic::format_result(
+                        &brute_force::brute_force(&self.table_data)
+                            .expect("Ошибка выполнения алгоритма"),
+                        &self.table_data,
+                    ));
+                    self.error = None;
+                }
+                Some(Algorithm::PetrovSokolitsyn) => {
                     self.result_str = Some(petrov_sokolicyn::format_result(
                         &petrov_sokolicyn::algorithm(&self.table_data)
                             .expect("Ошибка выполнения алгоритма"),
@@ -187,7 +244,7 @@ impl State {
                     ));
                     self.error = None;
                 }
-                Some(Algorithm::BrandAndBound) => {
+                Some(Algorithm::BranchAndBound) => {
                     match branch_and_bound::algorithm(&self.table_data, 5000, 1_000_000) {
                         Ok((result, stats)) => {
                             self.result_str = Some(branch_and_bound::format_result(
@@ -231,7 +288,7 @@ impl State {
                 row![
                     text("Алгоритм").width(80).align_y(Alignment::Center),
                     space().width(20),
-                    pick_list.width(300),
+                    pick_list.width(450),
                 ],
                 space().height(10),
                 row![

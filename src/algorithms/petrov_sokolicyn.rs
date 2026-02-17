@@ -1,4 +1,4 @@
-use super::johnsons::{AlgResult, build_schedule};
+use crate::algorithms::common::{AlgResult, build_schedule};
 
 pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
     if matrix.is_empty() {
@@ -98,6 +98,7 @@ pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
         schedule: best_schedule,
         makespan: best_makespan,
         idle_times,
+        method_name: "Petrov_Sokolicyn".to_string(),
     })
 }
 

@@ -1,3 +1,4 @@
+#[allow(dead_code)] // чтобы warning на method_name не мешал
 #[derive(Debug, Clone)]
 pub struct AlgResult {
     pub sequence: Vec<usize>,
@@ -57,23 +58,17 @@ pub fn build_schedule(
     Ok((schedule, makespan, idle_times))
 }
 
-pub fn calc_idle(schedule: &Vec<Vec<(i32, i32)>>) -> Vec<i32> {
-    if schedule.is_empty() {
-        return vec![];
-    }
-
-    let m_count = schedule[0].len();
-    let mut idle_times = vec![0; m_count];
-
-    for m in 0..m_count {
-        let mut idle = schedule[0][m].0;
-        for j in 1..schedule.len() {
-            let gap = schedule[j][m].0 - schedule[j - 1][m].1;
-            if gap > 0 {
-                idle += gap;
-            }
-        }
-        idle_times[m] = idle;
-    }
-    idle_times
+pub fn create_result(
+    matrix: &Vec<Vec<i32>>,
+    sequence: Vec<usize>,
+    name: &str,
+) -> Result<AlgResult, String> {
+    let (schedule, makespan, idle_times) = build_schedule(matrix, &sequence)?;
+    Ok(AlgResult {
+        sequence,
+        schedule,
+        makespan,
+        idle_times,
+        method_name: name.into(),
+    })
 }

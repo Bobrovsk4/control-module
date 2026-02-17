@@ -1,4 +1,4 @@
-use super::johnson_classic::AlgResult;
+use crate::algorithms::common::AlgResult;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -252,6 +252,7 @@ pub fn algorithm(
         schedule: best_schedule,
         makespan: best_makespan,
         idle_times,
+        method_name: "Branch and Bound".to_string(),
     };
 
     let stats = BranchAndBoundStats {

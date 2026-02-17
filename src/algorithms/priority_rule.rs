@@ -1,4 +1,6 @@
-fn priority_rule(matrix: &Vec<Vec<i32>>) -> Result<Vec<usize>, String> {
+use crate::algorithms::common::{AlgResult, create_result};
+
+pub fn priority_rule(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
     if matrix[0].len() != 2 {
         return Err("Нужно 2 станка".into());
     }
@@ -14,5 +16,7 @@ fn priority_rule(matrix: &Vec<Vec<i32>>) -> Result<Vec<usize>, String> {
         })
         .collect();
     jobs.sort_by_key(|k| std::cmp::Reverse(k.1));
-    Ok(jobs.into_iter().map(|(i, _)| i).collect())
+    let sequence = jobs.into_iter().map(|(i, _)| i).collect();
+
+    create_result(matrix, sequence, "Метод приоритетов")
 }
