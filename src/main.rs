@@ -4,7 +4,7 @@ use iced::widget::{button, column, container, pick_list, row, scrollable, space,
 use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
 use std::fs;
 
-use crate::algorithms::{branch_and_bound, johnsons, petrov_sokolicyn};
+use crate::algorithms::{branch_and_bound, johnson_classic, petrov_sokolicyn};
 
 #[derive(Default)]
 struct State {
@@ -23,18 +23,30 @@ enum Message {
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum Algorithm {
+pub enum Algorithm {
     #[default]
-    Johnson,
-    Petrov_Sokolicyn,
-    BrandAndBound, // ветвей и границ
+    JohnsonClassic, // 1.1 (2 станка)
+    JohnsonGen1,      // 1.1 (Min M1 -> start)
+    JohnsonGen2,      // 1.1 (Max Mn -> end)
+    JohnsonGen3,      // 1.1 (Bottleneck index -> priority)
+    JohnsonGen4,      // 1.1 (Max Sum -> start)
+    PriorityRule,     // 1.2 (Pq formula)
+    BruteForce,       // 1.3 (All permutations)
+    PetrovSokolitsyn, // 2 (3 candidates)
+    BranchAndBound,
 }
 
 impl Algorithm {
-    const ALL: [Algorithm; 3] = [
-        Algorithm::Johnson,
-        Algorithm::Petrov_Sokolicyn,
-        Algorithm::BrandAndBound,
+    const ALL: [Algorithm; 9] = [
+        Algorithm::JohnsonClassic,
+        Algorithm::JohnsonGen1,
+        Algorithm::JohnsonGen2,
+        Algorithm::JohnsonGen3,
+        Algorithm::JohnsonGen4,
+        Algorithm::PriorityRule,
+        Algorithm::BruteForce,
+        Algorithm::PetrovSokolitsyn,
+        Algorithm::BranchAndBound,
     ];
 }
 
@@ -160,8 +172,8 @@ impl State {
             }
             Message::RunTask => match self.selected_alg {
                 Some(Algorithm::Johnson) => {
-                    self.result_str = Some(johnsons::format_result(
-                        &johnsons::algorithm(&self.table_data)
+                    self.result_str = Some(johnson_classic::format_result(
+                        &johnson_classic::algorithm(&self.table_data)
                             .expect("Ошибка выполнения алгоритма"),
                         &self.table_data,
                     ));

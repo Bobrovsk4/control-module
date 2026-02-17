@@ -1,57 +1,11 @@
+use crate::algorithms::common::build_schedule;
+
 #[derive(Debug, Clone)]
 pub struct AlgResult {
     pub sequence: Vec<usize>,
     pub schedule: Vec<Vec<(i32, i32)>>,
     pub makespan: i32,
     pub idle_times: Vec<i32>,
-}
-
-pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
-    if matrix.is_empty() {
-        return Err("Матрица пуста".to_string());
-    }
-
-    let num_machines = matrix[0].len();
-
-    if num_machines == 0 {
-        return Err("Матрица содержит пустые строки".to_string());
-    }
-
-    for (i, row) in matrix.iter().enumerate() {
-        if row.len() != num_machines {
-            return Err(format!(
-                "Неравномерная матрица: строка {} имеет {} элементов, ожидалось {}",
-                i,
-                row.len(),
-                num_machines
-            ));
-        }
-        for (j, &time) in row.iter().enumerate() {
-            if time < 0 {
-                return Err(format!(
-                    "Отрицательное время обработки в работе {} на станке {}",
-                    i, j
-                ));
-            }
-        }
-    }
-
-    let sequence = if num_machines == 2 {
-        johnson_two_machines(matrix)
-    } else if num_machines > 2 {
-        johnson_heuristic_multi_machine(matrix)
-    } else {
-        return Err("Требуется минимум 2 станка для алгоритма Джонсона".to_string());
-    };
-
-    let (schedule, makespan, idle_times) = build_schedule(matrix, &sequence)?;
-
-    Ok(AlgResult {
-        sequence,
-        schedule,
-        makespan,
-        idle_times,
-    })
 }
 
 pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
@@ -103,7 +57,7 @@ pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     output
 }
 
-fn johnson_two_machines(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
+fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
     let mut jobs: Vec<(usize, i32, i32)> = matrix
         .iter()
         .enumerate()
@@ -188,54 +142,4 @@ fn johnson_heuristic_multi_machine(matrix: &Vec<Vec<i32>>) -> Vec<usize> {
     }
 
     sequence
-}
-
-pub fn build_schedule(
-    matrix: &Vec<Vec<i32>>,
-    sequence: &Vec<usize>,
-) -> Result<(Vec<Vec<(i32, i32)>>, i32, Vec<i32>), String> {
-    let num_jobs = sequence.len();
-    let num_machines = matrix[0].len();
-
-    let mut schedule = vec![vec![(0, 0); num_machines]; num_jobs];
-
-    let first_job = sequence[0];
-    let mut current_time = 0;
-    for machine in 0..num_machines {
-        let proc_time = matrix[first_job][machine];
-        schedule[0][machine] = (current_time, current_time + proc_time);
-        current_time += proc_time;
-    }
-
-    for (seq_idx, &job_idx) in sequence.iter().enumerate().skip(1) {
-        let prev_out_m1 = schedule[seq_idx - 1][0].1;
-        let proc_time_m1 = matrix[job_idx][0];
-        schedule[seq_idx][0] = (prev_out_m1, prev_out_m1 + proc_time_m1);
-
-        for machine in 1..num_machines {
-            let out_prev_machine = schedule[seq_idx][machine - 1].1;
-            let out_prev_job = schedule[seq_idx - 1][machine].1;
-            let in_time = out_prev_machine.max(out_prev_job);
-            let proc_time = matrix[job_idx][machine];
-            schedule[seq_idx][machine] = (in_time, in_time + proc_time);
-        }
-    }
-
-    let makespan = schedule[num_jobs - 1][num_machines - 1].1;
-
-    let mut idle_times = vec![0; num_machines];
-    for machine in 0..num_machines {
-        let mut total_idle = schedule[0][machine].0;
-
-        for seq_idx in 1..num_jobs {
-            let gap = schedule[seq_idx][machine].0 - schedule[seq_idx - 1][machine].1;
-            if gap > 0 {
-                total_idle += gap;
-            }
-        }
-
-        idle_times[machine] = total_idle;
-    }
-
-    Ok((schedule, makespan, idle_times))
 }

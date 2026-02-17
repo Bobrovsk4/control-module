@@ -1,4 +1,4 @@
-use super::johnsons::AlgResult;
+use super::johnson_classic::AlgResult;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -156,11 +156,7 @@ pub fn algorithm(
     }
 
     if num_jobs > 15 && node_limit == 0 && time_limit_ms == 0 {
-        return Err(format!(
-            "Задача слишком велика для полного перебора ({}! = {} перестановок)",
-            num_jobs,
-            (1..=num_jobs).fold(1u128, |acc, x| acc * x as u128)
-        ));
+        return Err("Задача слишком велика для полного перебора".to_string());
     }
 
     use std::time::Instant;
