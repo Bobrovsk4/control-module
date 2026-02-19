@@ -7,3 +7,6 @@ edition = "2024"
 iced = "0.14.0"
 csv = "1.4"
 rfd = "0.17"
+plotters = { version = "0.3.7", default-features = false, features = [
+    "svg_backend",
+] }

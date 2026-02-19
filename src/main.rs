@@ -1,4 +1,5 @@
 mod algorithms;
+mod gantt_chart;
 
 use iced::widget::{button, column, container, pick_list, row, scrollable, space, text};
 use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
@@ -161,21 +162,17 @@ impl State {
                 self.selected_alg = Some(alg);
             }
             Message::LoadTable => {
-                match self.parse_csv(
-                    rfd::FileDialog::new()
-                        .add_filter("CSV only", &["csv"])
-                        .pick_file()
-                        .expect("Ошибка выбора файла")
-                        .to_str()
-                        .expect("Ошибка преобразования названия файла в строку"),
-                ) {
-                    Ok(data) => {
-                        self.table_data = data;
-                        self.error = None;
-                        self.generate_table();
-                    }
-                    Err(e) => {
-                        self.error = Some(format!("Ошибка парсинга: {}", e));
+                if let Some(path) = rfd::FileDialog::new()
+                    .add_filter("CSV", &["csv"])
+                    .pick_file()
+                {
+                    match self.parse_csv(&path.to_string_lossy()) {
+                        Ok(data) => {
+                            self.table_data = data;
+                            self.error = None;
+                            self.generate_table();
+                        }
+                        Err(e) => self.error = Some(format!("Ошибка парсинга: {}", e)),
                     }
                 }
             }

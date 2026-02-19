@@ -1,5 +1,5 @@
 #[allow(dead_code)] // чтобы warning на method_name не мешал
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AlgResult {
     pub sequence: Vec<usize>,
     pub schedule: Vec<Vec<(i32, i32)>>,

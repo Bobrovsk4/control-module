@@ -1,4 +1,7 @@
-use crate::algorithms::common::{AlgResult, create_result};
+use crate::{
+    algorithms::common::{AlgResult, create_result},
+    gantt_chart::draw_gantt,
+};
 
 pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     let mut output = String::new();
@@ -75,7 +78,15 @@ pub fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
         }
     }
 
-    create_result(matrix, sequence, "Джонсон (классический)")
+    let orig_seq: Vec<usize> = (0..matrix.len()).collect();
+    let orig_result = create_result(matrix, orig_seq, "Джонсон классический (исходный)");
+
+    let final_result = create_result(matrix, sequence, "Джонсон классический (финальный)");
+
+    draw_gantt(&orig_result?, &matrix.clone(), "orig.svg");
+    draw_gantt(&final_result.clone()?, &matrix.clone(), "final.svg");
+
+    final_result
 }
 
 fn find_min_job(jobs: &[(usize, i32, i32)]) -> (usize, usize) {
