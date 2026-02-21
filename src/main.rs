@@ -178,65 +178,81 @@ impl State {
             }
             Message::RunTask => match self.selected_alg {
                 Some(Algorithm::JohnsonClassic) => {
+                    let res = johnson_classic::johnson_classic(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_classic::johnson_classic(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::JohnsonGen1) => {
+                    let res = johnson_gen1::johnson_gen1(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_gen1::johnson_gen1(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::JohnsonGen2) => {
+                    let res = johnson_gen2::johnson_gen2(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_gen2::johnson_gen2(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::JohnsonGen3) => {
+                    let res = johnson_gen3::johnson_gen3(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_gen3::johnson_gen3(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::JohnsonGen4) => {
+                    let res = johnson_gen4::johnson_gen4(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &johnson_gen4::johnson_gen4(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::PriorityRule) => {
+                    let res = priority_rule::priority_rule(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &priority_rule::priority_rule(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::BruteForce) => {
+                    let res = brute_force::brute_force(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(johnson_classic::format_result(
-                        &brute_force::brute_force(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;
                 }
                 Some(Algorithm::PetrovSokolitsyn) => {
+                    let res = petrov_sokolicyn::algorithm(&self.table_data)
+                        .expect("Ошибка выполнения алгоритма");
                     self.result_str = Some(petrov_sokolicyn::format_result(
-                        &petrov_sokolicyn::algorithm(&self.table_data)
-                            .expect("Ошибка выполнения алгоритма"),
+                        &res.0,
+                        res.1,
                         &self.table_data,
                     ));
                     self.error = None;

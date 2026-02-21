@@ -1,6 +1,9 @@
-use crate::algorithms::common::{AlgResult, build_schedule};
+use crate::{
+    algorithms::common::{AlgResult, build_schedule, create_result},
+    gantt_chart::draw_gantt,
+};
 
-pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
+pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<(AlgResult, i32), String> {
     if matrix.is_empty() {
         return Err("Матрица пуста".to_string());
     }
@@ -93,16 +96,31 @@ pub fn algorithm(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
         idle_times[machine] = total_idle;
     }
 
-    Ok(AlgResult {
-        sequence: best_sequence,
-        schedule: best_schedule,
-        makespan: best_makespan,
-        idle_times,
-        method_name: "Petrov_Sokolicyn".to_string(),
-    })
+    let orig_seq: Vec<usize> = (0..matrix.len()).collect();
+    let orig_result = create_result(matrix, orig_seq, "Петров-Соколицын (исходный)");
+
+    let final_result = create_result(
+        matrix,
+        best_sequence.clone(),
+        "Петров-Соколицын (финальный)",
+    );
+
+    draw_gantt(&orig_result.clone()?, &matrix.clone(), "orig.svg");
+    draw_gantt(&final_result.clone()?, &matrix.clone(), "final.svg");
+
+    Ok((
+        AlgResult {
+            sequence: best_sequence,
+            schedule: best_schedule,
+            makespan: best_makespan,
+            idle_times,
+            method_name: "Petrov_Sokolicyn".to_string(),
+        },
+        orig_result.unwrap().makespan,
+    ))
 }
 
-pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
+pub fn format_result(result: &AlgResult, initial_makespan: i32, matrix: &Vec<Vec<i32>>) -> String {
     let mut output = String::new();
 
     let num_machines = matrix[0].len();
@@ -237,8 +255,8 @@ pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     }
 
     output.push_str(&format!(
-        "\nДлительность производственного цикла: {}\n",
-        result.makespan
+        "\nДлительность производственного цикла: {} -> {}\n",
+        initial_makespan, result.makespan
     ));
     output.push_str("Простои станков:\n");
     for (machine, &idle) in result.idle_times.iter().enumerate() {

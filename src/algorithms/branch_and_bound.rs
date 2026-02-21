@@ -1,4 +1,5 @@
-use crate::algorithms::common::AlgResult;
+use crate::algorithms::common::{AlgResult, create_result};
+use crate::gantt_chart::draw_gantt;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
@@ -248,7 +249,7 @@ pub fn algorithm(
     }
 
     let result = AlgResult {
-        sequence: best_sequence,
+        sequence: best_sequence.clone(),
         schedule: best_schedule,
         makespan: best_makespan,
         idle_times,
@@ -262,6 +263,14 @@ pub fn algorithm(
         total_permutations: (1..=num_jobs).fold(1u128, |acc, x| acc * x as u128),
         time_ms: start_time.elapsed().as_millis() as u64,
     };
+
+    let orig_seq: Vec<usize> = (0..matrix.len()).collect();
+    let orig_result = create_result(matrix, orig_seq, "Метод ветвей и границ (исходный)");
+
+    let final_result = create_result(matrix, best_sequence, "Метод ветвей и границ (финальный)");
+
+    draw_gantt(&orig_result?, &matrix.clone(), "orig.svg");
+    draw_gantt(&final_result.clone()?, &matrix.clone(), "final.svg");
 
     Ok((result, stats))
 }

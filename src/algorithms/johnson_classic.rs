@@ -3,7 +3,7 @@ use crate::{
     gantt_chart::draw_gantt,
 };
 
-pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
+pub fn format_result(result: &AlgResult, initial_makespan: i32, matrix: &Vec<Vec<i32>>) -> String {
     let mut output = String::new();
 
     if matrix[0].len() == 2 {
@@ -41,8 +41,8 @@ pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     }
 
     output.push_str(&format!(
-        "\nДлительность производственного цикла: {}\n",
-        result.makespan
+        "\nДлительность производственного цикла: {} -> {}\n",
+        initial_makespan, result.makespan
     ));
     output.push_str("Простои станков:\n");
     for (machine, &idle) in result.idle_times.iter().enumerate() {
@@ -52,7 +52,7 @@ pub fn format_result(result: &AlgResult, matrix: &Vec<Vec<i32>>) -> String {
     output
 }
 
-pub fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
+pub fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Result<(AlgResult, i32), String> {
     let mut jobs: Vec<(usize, i32, i32)> = matrix
         .iter()
         .enumerate()
@@ -83,10 +83,10 @@ pub fn johnson_classic(matrix: &Vec<Vec<i32>>) -> Result<AlgResult, String> {
 
     let final_result = create_result(matrix, sequence, "Джонсон классический (финальный)");
 
-    draw_gantt(&orig_result?, &matrix.clone(), "orig.svg");
+    draw_gantt(&orig_result.clone()?, &matrix.clone(), "orig.svg");
     draw_gantt(&final_result.clone()?, &matrix.clone(), "final.svg");
 
-    final_result
+    Ok((final_result.unwrap(), orig_result.unwrap().makespan))
 }
 
 fn find_min_job(jobs: &[(usize, i32, i32)]) -> (usize, usize) {
