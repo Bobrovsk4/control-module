@@ -248,14 +248,20 @@ impl State {
                     self.error = None;
                 }
                 Some(Algorithm::PetrovSokolitsyn) => {
-                    let res = petrov_sokolicyn::algorithm(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(petrov_sokolicyn::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
+                    match petrov_sokolicyn::algorithm(&self.table_data) {
+                        Ok(res) => {
+                            self.result_str = Some(petrov_sokolicyn::format_result(
+                                &res.0,
+                                res.1,
+                                &self.table_data,
+                            ));
+                            self.error = None;
+                        }
+                        Err(e) => {
+                            self.error = Some(format!("Ошибка метода Петрова-Соколицына:\n{}", e));
+                            self.result_str = None;
+                        }
+                    }
                 }
                 Some(Algorithm::BranchAndBound) => {
                     match branch_and_bound::algorithm(&self.table_data, 5000, 1_000_000) {
