@@ -1,77 +1,27 @@
-mod algorithms;
-mod gantt_chart;
+mod libs;
 
 use iced::widget::{button, column, container, pick_list, row, scrollable, space, text};
 use iced::{Alignment, Border, Color, Element, Length, Length::Fill, Theme, color};
+use std::ffi::CStr;
 use std::fs;
 
-use crate::algorithms::{
-    branch_and_bound, brute_force, johnson_classic, johnson_gen1, johnson_gen2, johnson_gen3,
-    johnson_gen4, petrov_sokolicyn, priority_rule,
-};
+use crate::libs::DLLAlgorithm;
 
 #[derive(Default)]
 struct State {
-    selected_alg: Option<Algorithm>,
+    selected_alg: Option<String>,
     table_data: Vec<Vec<i32>>,
     error: Option<String>,
     result_str: Option<String>,
+    algs: Vec<DLLAlgorithm>,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    AlgSelected(Algorithm),
+    AlgSelected(String),
     LoadTable,
     RunTask,
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Algorithm {
-    #[default]
-    JohnsonClassic, // 1.1 (2 станка)
-    JohnsonGen1,      // 1.1 (Min M1 -> start)
-    JohnsonGen2,      // 1.1 (Max Mn -> end)
-    JohnsonGen3,      // 1.1 (Bottleneck index -> priority)
-    JohnsonGen4,      // 1.1 (Max Sum -> start)
-    PriorityRule,     // 1.2 (Pq formula)
-    BruteForce,       // 1.3 (All permutations)
-    PetrovSokolitsyn, // 2 (3 candidates)
-    BranchAndBound,
-}
-
-impl Algorithm {
-    const ALL: [Algorithm; 9] = [
-        Algorithm::JohnsonClassic,
-        Algorithm::JohnsonGen1,
-        Algorithm::JohnsonGen2,
-        Algorithm::JohnsonGen3,
-        Algorithm::JohnsonGen4,
-        Algorithm::PriorityRule,
-        Algorithm::BruteForce,
-        Algorithm::PetrovSokolitsyn,
-        Algorithm::BranchAndBound,
-    ];
-}
-
-impl std::fmt::Display for Algorithm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Algorithm::JohnsonClassic => "Алгоритм Джонсона (классический)",
-                Algorithm::JohnsonGen1 => "Алгоритм Джонсона (мин. время на 1-м станке)",
-                Algorithm::JohnsonGen2 => "Алгоритм Джонсона (макс. время на последнем станке)",
-                Algorithm::JohnsonGen3 => "Алгоритм Джонсона (приоритет «узкого места»)",
-                Algorithm::JohnsonGen4 => "Алгоритм Джонсона (макс. суммарное время)",
-                Algorithm::PriorityRule => "Метод приоритетов",
-                Algorithm::BruteForce => "Метод полного перебора",
-                Algorithm::PetrovSokolitsyn => "Метод Петрова-Соколицына",
-                Algorithm::BranchAndBound => "Метод ветвей и границ",
-            }
-        )
-    }
+    LoadDLLs,
 }
 
 impl State {
@@ -176,118 +126,62 @@ impl State {
                     }
                 }
             }
-            Message::RunTask => match self.selected_alg {
-                Some(Algorithm::JohnsonClassic) => {
-                    let res = johnson_classic::johnson_classic(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
+            Message::RunTask => match self.selected_alg.clone() {
+                Some(alg_name) => {
+                    self.result_str = Some("Выполнение алгоритма".to_string());
+
+                    self.result_str = self
+                        .algs
+                        .iter()
+                        .find(|alg| unsafe {
+                            CStr::from_ptr((alg.name)())
+                                .to_str()
+                                .map(|n| n == alg_name)
+                                .unwrap_or(false)
+                        })
+                        .map(|alg| alg.run(&self.table_data));
                     self.error = None;
-                }
-                Some(Algorithm::JohnsonGen1) => {
-                    let res = johnson_gen1::johnson_gen1(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::JohnsonGen2) => {
-                    let res = johnson_gen2::johnson_gen2(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::JohnsonGen3) => {
-                    let res = johnson_gen3::johnson_gen3(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::JohnsonGen4) => {
-                    let res = johnson_gen4::johnson_gen4(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::PriorityRule) => {
-                    let res = priority_rule::priority_rule(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::BruteForce) => {
-                    let res = brute_force::brute_force(&self.table_data)
-                        .expect("Ошибка выполнения алгоритма");
-                    self.result_str = Some(johnson_classic::format_result(
-                        &res.0,
-                        res.1,
-                        &self.table_data,
-                    ));
-                    self.error = None;
-                }
-                Some(Algorithm::PetrovSokolitsyn) => {
-                    match petrov_sokolicyn::algorithm(&self.table_data) {
-                        Ok(res) => {
-                            self.result_str = Some(petrov_sokolicyn::format_result(
-                                &res.0,
-                                res.1,
-                                &self.table_data,
-                            ));
-                            self.error = None;
-                        }
-                        Err(e) => {
-                            self.error = Some(format!("Ошибка метода Петрова-Соколицына:\n{}", e));
-                            self.result_str = None;
-                        }
-                    }
-                }
-                Some(Algorithm::BranchAndBound) => {
-                    match branch_and_bound::algorithm(&self.table_data, 5000, 1_000_000) {
-                        Ok((result, stats)) => {
-                            self.result_str = Some(branch_and_bound::format_result(
-                                &result,
-                                &stats,
-                                &self.table_data,
-                            ));
-                            self.error = None;
-                        }
-                        Err(e) => {
-                            self.error = Some(format!("Ошибка метода ветвей и границ:\n{}", e));
-                            self.result_str = None;
-                        }
-                    }
+                    println!("{:?}", self.result_str);
                 }
                 None => {
+                    self.result_str = None;
                     self.error = Some("Алгоритм не выбран".to_string());
                 }
             },
+            Message::LoadDLLs => {
+                if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                    let directory = path.as_path().to_str().unwrap();
+                    println!("dir: {}", directory);
+
+                    self.algs = DLLAlgorithm::load_all(directory);
+
+                    let mut names = String::from("Загружены библиотеки:\n");
+                    for alg in self.algs.iter().clone() {
+                        let name = unsafe {
+                            std::ffi::CStr::from_ptr((alg.name)())
+                                .to_str()
+                                .unwrap()
+                                .to_string()
+                        } + "\n";
+                        names.push_str(name.as_str());
+                    }
+                    self.result_str = Some(names);
+                }
+            }
         }
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let pick_list = pick_list(&Algorithm::ALL[..], self.selected_alg, Message::AlgSelected);
+        let all_alg_names: Vec<String> = self
+            .algs
+            .iter()
+            .map(|alg| unsafe { CStr::from_ptr((alg.name)()).to_str().unwrap().to_string() })
+            .collect();
+        let pick_list = pick_list(
+            all_alg_names,
+            self.selected_alg.clone(),
+            Message::AlgSelected,
+        );
 
         let error_message = if let Some(err) = &self.error {
             Some(text(format!("{}", err)))
@@ -305,6 +199,9 @@ impl State {
             column![
                 space().height(10),
                 row![
+                    button(text("Загрузить").align_x(Alignment::Center))
+                        .width(100)
+                        .on_press(Message::LoadDLLs),
                     text("Алгоритм").width(80).align_y(Alignment::Center),
                     space().width(20),
                     pick_list.width(450),

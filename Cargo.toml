@@ -10,3 +10,4 @@ rfd = "0.17"
 plotters = { version = "0.3.7", default-features = false, features = [
     "svg_backend",
 ] }
+libloading = "0.9"
